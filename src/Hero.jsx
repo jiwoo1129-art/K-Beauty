@@ -30,7 +30,7 @@ export default function Hero({ onSelect }) {
     <main className="hero" id="hero">
       <section className="hero__copy">
         <p className="eyebrow"><span /> BEAUTY LISTING STUDIO</p>
-        <h1>아름다운 문장에,<br /><em>분명한 근거를.</em></h1>
+        <h1>화장품 상세페이지,<br /><em>감이 아니라 근거로.</em></h1>
         <p className="hero__lead">제품의 매력은 그대로 살리고 위험한 표현만 정확하게 다듬습니다. 생성부터 문장별 정책 검토까지 한 작업 공간에서 이어가세요.</p>
         <div className="hero__actions" aria-label="작업 선택">
           <button className="hero-button hero-button--primary" type="button" onClick={() => onSelect('write')}><small>제품 정보가 있다면</small><span>새 리스팅 만들기</span><b>＋</b></button>

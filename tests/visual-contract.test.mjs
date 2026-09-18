@@ -6,6 +6,9 @@ test('preserves white orange product and scanning experience', async () => {
   const hero = await readFile(new URL('../src/Hero.jsx', import.meta.url), 'utf8');
   const css = await readFile(new URL('../src/styles.css', import.meta.url), 'utf8');
   assert.match(hero, /Beauty Listing Studio/i);
+  assert.match(hero, /화장품 상세페이지/);
+  assert.match(hero, /감이 아니라/);
+  assert.doesNotMatch(hero, /아름다운 문장에/);
   assert.match(hero, /DesktopExperience/);
   assert.match(hero, /claim-scan/);
   assert.match(hero, /getBrowserExperienceMode/);
