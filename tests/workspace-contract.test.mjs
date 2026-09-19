@@ -22,3 +22,12 @@ test('connects local workspace management actions', async () => {
   const workspace = await readFile(new URL('../src/StudioWorkspace.jsx', import.meta.url), 'utf8');
   for (const phrase of ['작업 복제', '작업 삭제', '버전 저장', '버전 복원', 'JSON 백업', 'JSON 가져오기']) assert.match(workspace, new RegExp(phrase));
 });
+
+test('renders writing and validation as separate same-window routes', async () => {
+  const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  assert.match(app, /normalizeRoute/);
+  assert.match(app, /popstate/);
+  assert.match(app, /initialMode="write"/);
+  assert.match(app, /initialMode="validate"/);
+  assert.doesNotMatch(app, /target="_blank"/);
+});

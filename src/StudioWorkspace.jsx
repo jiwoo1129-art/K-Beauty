@@ -12,7 +12,7 @@ function makeWorkspace(mode = 'write') {
   return { name: `새 Beauty 작업 ${new Date().toLocaleDateString('ko-KR')}`, mode, facts: EMPTY_FACTS, sourceText: '', listing: null, findings: [], ignored: [] };
 }
 
-export default function StudioWorkspace({ initialMode = 'write' }) {
+export default function StudioWorkspace({ initialMode = 'write', lockedMode = false, onNavigate = () => {} }) {
   const store = useMemo(() => createWorkspaceStore(), []);
   const [workspaces, setWorkspaces] = useState(() => store.list());
   const [current, setCurrent] = useState(() => workspaces[0] || makeWorkspace(initialMode));
@@ -148,7 +148,7 @@ export default function StudioWorkspace({ initialMode = 'write' }) {
         <button type="button" onClick={addWorkspace}>새 작업</button><button type="button" onClick={duplicateWorkspace}>작업 복제</button><button type="button" onClick={deleteWorkspace}>작업 삭제</button><button type="button" onClick={saveSnapshot}>버전 저장</button><button type="button" onClick={restoreLastSnapshot}>버전 복원</button><button type="button" onClick={exportBackup}>JSON 백업</button><label className="manager-import" htmlFor="backup-file">JSON 가져오기</label><input id="backup-file" className="visually-hidden" type="file" accept="application/json,.json" onChange={importBackup} />
       </div>
 
-      <div className="studio__tabs" role="tablist" aria-label="작업 유형"><button role="tab" aria-selected={mode === 'write'} className={mode === 'write' ? 'active' : ''} onClick={() => setMode('write')}>새 리스팅 생성</button><button role="tab" aria-selected={mode === 'validate'} className={mode === 'validate' ? 'active' : ''} onClick={() => setMode('validate')}>기존 문구 검증</button></div>
+      {!lockedMode && <div className="studio__tabs" role="tablist" aria-label="작업 유형"><button role="tab" aria-selected={mode === 'write'} className={mode === 'write' ? 'active' : ''} onClick={() => setMode('write')}>새 리스팅 생성</button><button role="tab" aria-selected={mode === 'validate'} className={mode === 'validate' ? 'active' : ''} onClick={() => setMode('validate')}>기존 문구 검증</button></div>}
 
       {mode === 'write' ? (
         <form className="studio-grid" onSubmit={submitGeneration} noValidate>
