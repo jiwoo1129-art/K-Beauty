@@ -4,6 +4,33 @@ const unsupportedClaim = /FDA approved|clinically proven|cures?|treats?|heals?|p
 
 export const countUtf8Bytes = (text) => new TextEncoder().encode(String(text || '')).length;
 
+export function formatListingText(listing) {
+  return [
+    'TITLE', listing.title || '', '',
+    'BULLET POINTS', ...(listing.bullets || []).map((item, index) => `${index + 1}. ${item}`), '',
+    'DESCRIPTION', listing.description || '', '',
+    'SEARCH TERMS', listing.searchTerms || '',
+  ].join('\n');
+}
+
+export function parseListingText(text) {
+  const source = String(text || '').replace(/\r/g, '').trim();
+  if (!source.startsWith('TITLE\n')) return { title: '', bullets: [], description: source, searchTerms: '' };
+  const read = (start, end) => {
+    const from = source.indexOf(`${start}\n`);
+    if (from < 0) return '';
+    const valueStart = from + start.length + 1;
+    const to = end ? source.indexOf(`\n\n${end}\n`, valueStart) : source.length;
+    return source.slice(valueStart, to < 0 ? source.length : to).trim();
+  };
+  return {
+    title: read('TITLE', 'BULLET POINTS'),
+    bullets: read('BULLET POINTS', 'DESCRIPTION').split('\n').map((line) => line.replace(/^\d+\.\s*/, '').trim()).filter(Boolean),
+    description: read('DESCRIPTION', 'SEARCH TERMS'),
+    searchTerms: read('SEARCH TERMS'),
+  };
+}
+
 export function scoreProductFacts(facts) {
   const missing = REQUIRED_FIELDS.filter((key) => !String(facts[key] || '').trim());
   if (String(facts.benefits || '').trim() && !String(facts.evidence || '').trim()) missing.push('evidence');

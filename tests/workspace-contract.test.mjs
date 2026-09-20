@@ -44,3 +44,16 @@ test('supports the reference product intake and local PDF autofill', async () =>
   assert.match(workspace, /주요 고객/);
   assert.match(workspace, /브랜드 톤/);
 });
+
+test('supports whole-listing copy download and two-way route transfer', async () => {
+  const workspace = await readFile(new URL('../src/StudioWorkspace.jsx', import.meta.url), 'utf8');
+  const editor = await readFile(new URL('../src/ListingEditor.jsx', import.meta.url), 'utf8');
+  assert.match(editor, /전체 복사/);
+  assert.match(editor, /TXT 다운로드/);
+  assert.match(editor, /전체 정책 검토/);
+  assert.match(editor, /URL\.createObjectURL/);
+  assert.match(workspace, /onNavigate\('\/validate'\)/);
+  assert.match(workspace, /수정 문구를 작성 화면으로 전달/);
+  assert.match(workspace, /onNavigate\('\/write'\)/);
+  assert.match(workspace, /comply\.ai\.active-workspace/);
+});

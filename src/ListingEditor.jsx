@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { countUtf8Bytes } from './listingGenerator.js';
+import { countUtf8Bytes, formatListingText } from './listingGenerator.js';
 
 function EditableField({ label, value, onChange, metric = 'chars', multiline = false, onReview }) {
   const [copied, setCopied] = useState(false);
@@ -19,10 +19,27 @@ function EditableField({ label, value, onChange, metric = 'chars', multiline = f
   );
 }
 
-export default function ListingEditor({ listing, onChange, onReview }) {
+export default function ListingEditor({ listing, onChange, onReview, onReviewAll }) {
+  const [copiedAll, setCopiedAll] = useState(false);
   const update = (key, value) => onChange({ ...listing, [key]: value });
+  const text = formatListingText(listing);
+  async function copyAll() {
+    await navigator.clipboard.writeText(text);
+    setCopiedAll(true);
+    window.setTimeout(() => setCopiedAll(false), 2000);
+  }
+  function download() {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'amazon-beauty-listing.txt';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
   return (
     <div className="listing-editor">
+      <div className="listing-actions"><button type="button" onClick={copyAll}>{copiedAll ? '전체 복사됨 ✓' : '전체 복사'}</button><button type="button" onClick={download}>TXT 다운로드</button><button type="button" onClick={() => onReviewAll(text)}>전체 정책 검토</button></div>
       <EditableField label="Title" value={listing.title || ''} onChange={(value) => update('title', value)} onReview={() => onReview(listing.title || '')} />
       {(listing.bullets || []).map((bullet, index) => <EditableField key={index} label={`Bullet ${index + 1}`} value={bullet} onChange={(value) => update('bullets', listing.bullets.map((item, itemIndex) => itemIndex === index ? value : item))} onReview={() => onReview(bullet)} multiline />)}
       <EditableField label="Description" value={listing.description || ''} onChange={(value) => update('description', value)} onReview={() => onReview(listing.description || '')} multiline />

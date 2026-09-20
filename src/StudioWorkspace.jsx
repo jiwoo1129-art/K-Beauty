@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MAX_FILE_SIZE, SUPPORTED_EXTENSIONS, analyzeListing, sanitizeImportedText } from './complianceEngine.js';
-import { REQUIRED_FIELDS, generateListing, scoreProductFacts } from './listingGenerator.js';
+import { REQUIRED_FIELDS, generateListing, parseListingText, scoreProductFacts } from './listingGenerator.js';
 import { createWorkspaceStore } from './workspaceStore.js';
 import { extractPdfText, inferProductFacts } from './productPdf.js';
 import ListingEditor from './ListingEditor.jsx';
@@ -19,7 +19,7 @@ function makeWorkspace(mode = 'write') {
 export default function StudioWorkspace({ initialMode = 'write', lockedMode = false, onNavigate = () => {} }) {
   const store = useMemo(() => createWorkspaceStore(), []);
   const [workspaces, setWorkspaces] = useState(() => store.list());
-  const [current, setCurrent] = useState(() => workspaces[0] || makeWorkspace(initialMode));
+  const [current, setCurrent] = useState(() => workspaces.find((item) => item.id === localStorage.getItem('comply.ai.active-workspace')) || workspaces[0] || makeWorkspace(initialMode));
   const [mode, setMode] = useState(initialMode);
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('저장 준비');
@@ -28,6 +28,7 @@ export default function StudioWorkspace({ initialMode = 'write', lockedMode = fa
   const resultRef = useRef(null);
 
   useEffect(() => setMode(initialMode), [initialMode]);
+  useEffect(() => { if (current.id) localStorage.setItem('comply.ai.active-workspace', current.id); }, [current.id]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const saved = store.save({ ...current, mode });
@@ -104,9 +105,22 @@ export default function StudioWorkspace({ initialMode = 'write', lockedMode = fa
   }
 
   function reviewListingPart(text) {
-    setMode('validate');
-    setCurrent((value) => ({ ...value, sourceText: text, findings: analyzeListing(text), ignored: [] }));
-    jumpToResult('선택한 항목을 다시 검토했습니다.');
+    const next = store.save({ ...current, sourceText: text, findings: analyzeListing(text), ignored: [], mode: 'validate' });
+    setCurrent(next);
+    if (lockedMode) onNavigate('/validate');
+    else { setMode('validate'); jumpToResult('선택한 항목을 다시 검토했습니다.'); }
+  }
+
+  function reviewCompleteListing(text) {
+    const next = store.save({ ...current, sourceText: text, findings: analyzeListing(text), ignored: [], mode: 'validate' });
+    setCurrent(next);
+    onNavigate('/validate');
+  }
+
+  function sendValidatedTextToWrite() {
+    const next = store.save({ ...current, listing: parseListingText(current.sourceText), mode: 'write' });
+    setCurrent(next);
+    onNavigate('/write');
   }
 
   function addWorkspace() {
@@ -201,7 +215,8 @@ export default function StudioWorkspace({ initialMode = 'write', lockedMode = fa
 
       <section className="results" ref={resultRef} tabIndex="-1" aria-label="작업 결과">
         <div className="results__head"><div><small>02 / REVIEW & EDIT</small><h3>{mode === 'write' ? '생성 결과 편집' : '문장별 위험 검토'}</h3></div>{mode === 'validate' && <div className="risk-summary"><b>{current.findings?.filter((item) => item.risk === 'HIGH').length || 0}</b> HIGH <b>{current.findings?.filter((item) => item.risk === 'MEDIUM').length || 0}</b> MEDIUM <b>{current.findings?.filter((item) => item.risk === 'LOW').length || 0}</b> LOW</div>}</div>
-        {mode === 'write' ? current.listing ? <><ListingEditor listing={current.listing} onChange={(listing) => setCurrent((value) => ({ ...value, listing }))} onReview={reviewListingPart} />{current.listing.warnings?.map((warning) => <p className="result-warning" key={warning}>{warning}</p>)}</> : <div className="empty-result"><span>＋</span><p>제품 정보를 입력하면 편집 가능한 리스팅 초안이 여기에 표시됩니다.</p></div> : current.findings?.length || current.sourceText ? <RiskReview findings={current.findings || []} ignored={current.ignored || []} onApply={applyFinding} onIgnore={(id) => setCurrent((value) => ({ ...value, ignored: [...(value.ignored || []), id] }))} /> : <div className="empty-result"><span>⌁</span><p>문구를 검토하면 위험도와 수정 근거가 여기에 표시됩니다.</p></div>}
+        {mode === 'validate' && current.sourceText && <div className="result-toolbar"><button type="button" onClick={sendValidatedTextToWrite}>수정 문구를 작성 화면으로 전달</button></div>}
+        {mode === 'write' ? current.listing ? <><ListingEditor listing={current.listing} onChange={(listing) => setCurrent((value) => ({ ...value, listing }))} onReview={reviewListingPart} onReviewAll={reviewCompleteListing} />{current.listing.warnings?.map((warning) => <p className="result-warning" key={warning}>{warning}</p>)}</> : <div className="empty-result"><span>＋</span><p>제품 정보를 입력하면 편집 가능한 리스팅 초안이 여기에 표시됩니다.</p></div> : current.findings?.length || current.sourceText ? <RiskReview findings={current.findings || []} ignored={current.ignored || []} onApply={applyFinding} onIgnore={(id) => setCurrent((value) => ({ ...value, ignored: [...(value.ignored || []), id] }))} /> : <div className="empty-result"><span>⌁</span><p>문구를 검토하면 위험도와 수정 근거가 여기에 표시됩니다.</p></div>}
         <p className="disclaimer"><strong>검토 한계</strong> 자동 결과는 정책 준수를 보증하지 않습니다. Amazon과 FDA의 최신 정책 및 담당자 검토를 거쳐 게시하세요.</p>
       </section>
     </section>

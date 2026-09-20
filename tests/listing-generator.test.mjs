@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { countUtf8Bytes, generateListing, scoreProductFacts } from '../src/listingGenerator.js';
+import { countUtf8Bytes, formatListingText, generateListing, parseListingText, scoreProductFacts } from '../src/listingGenerator.js';
 
 test('scores required facts and excludes unsupported claims', () => {
   const facts = { brand: 'COMPLY LAB', productName: 'Barrier Serum', category: 'Serum', ingredients: 'Ceramide', benefits: 'hydrates, FDA approved, heals acne', evidence: '', certifications: '', directions: 'Apply twice daily', keywords: 'k beauty serum' };
@@ -28,4 +28,15 @@ test('includes verified commerce facts in the listing', () => {
   assert.match(listing.title, /30 ml/);
   assert.match(listing.description, /lightweight/);
   assert.match(listing.description, /External use only/);
+});
+
+test('formats and parses a complete downloadable listing', () => {
+  const listing = { title: 'Barrier Serum', bullets: ['Hydrating', 'Lightweight'], description: 'Daily serum.', searchTerms: 'face serum' };
+  const text = formatListingText(listing);
+  assert.equal(text, 'TITLE\nBarrier Serum\n\nBULLET POINTS\n1. Hydrating\n2. Lightweight\n\nDESCRIPTION\nDaily serum.\n\nSEARCH TERMS\nface serum');
+  assert.deepEqual(parseListingText(text), listing);
+});
+
+test('keeps unstructured validation copy as the description', () => {
+  assert.deepEqual(parseListingText('A draft without headings'), { title: '', bullets: [], description: 'A draft without headings', searchTerms: '' });
 });
