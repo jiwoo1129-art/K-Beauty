@@ -2,11 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { MAX_FILE_SIZE, SUPPORTED_EXTENSIONS, analyzeListing, sanitizeImportedText } from './complianceEngine.js';
 import { REQUIRED_FIELDS, generateListing, scoreProductFacts } from './listingGenerator.js';
 import { createWorkspaceStore } from './workspaceStore.js';
+import { extractPdfText, inferProductFacts } from './productPdf.js';
 import ListingEditor from './ListingEditor.jsx';
 import RiskReview from './RiskReview.jsx';
 
-const EMPTY_FACTS = { brand: '', productName: '', category: '', ingredients: '', benefits: '', evidence: '', certifications: '', directions: '', keywords: '' };
-const FIELD_LABELS = { brand: '브랜드', productName: '상품명', category: '카테고리', ingredients: '주요 성분', benefits: '기대 효능', evidence: '효능 근거', certifications: '인증', directions: '사용법', keywords: '검색 키워드' };
+const EMPTY_FACTS = { brand: '', productName: '', category: '', netContents: '', origin: '', ingredients: '', benefits: '', texture: '', audience: '', directions: '', warnings: '', brandTone: '', primaryKeyword: '', keywords: '', evidence: '', certifications: '' };
+const FIELD_LABELS = { brand: '브랜드명', productName: '제품명', category: '제품 유형', netContents: '용량', origin: '원산지', ingredients: '주요 성분', benefits: '주요 특징', texture: '제형 및 사용감', audience: '주요 고객', directions: '사용 방법', warnings: '주의 사항', brandTone: '브랜드 톤', primaryKeyword: '핵심 키워드', keywords: '추가 키워드', evidence: '효능 표현의 근거' };
+const TEXTAREA_FIELDS = new Set(['ingredients', 'benefits', 'directions', 'warnings', 'evidence']);
+const PRODUCT_TYPES = ['Makeup - Body', 'Makeup - Eyes', 'Makeup - Face', 'Makeup - Lips', 'Makeup Palette', 'Makeup Remover', 'Skin Care - Body', 'Skin Care - Eyes', 'Skin Care - Face', 'Skin Care - Lip Care', 'Skin Care - Sunscreen', 'Hair Care - Shampoo & Conditioner', 'Hair Care - Styling', 'Hair Care - Treatment', 'Hair Care - Scalp', 'Fragrance - Women\'s', 'Fragrance - Men\'s', 'Foot, Hand & Nail Care', 'Personal Care - Bath & Body', 'Personal Care - Deodorant', 'Personal Care - Oral Care', 'Men\'s Grooming - Shave', 'Men\'s Grooming - Skin Care'];
+const PDF_LIMIT = 15 * 1024 * 1024;
 
 function makeWorkspace(mode = 'write') {
   return { name: `새 Beauty 작업 ${new Date().toLocaleDateString('ko-KR')}`, mode, facts: EMPTY_FACTS, sourceText: '', listing: null, findings: [], ignored: [] };
@@ -74,6 +78,22 @@ export default function StudioWorkspace({ initialMode = 'write', lockedMode = fa
     setCurrent((value) => ({ ...value, sourceText: text }));
     setErrors({});
     setAnnouncement(`${file.name}을 브라우저에서 읽었습니다. 원본 파일은 서버로 전송하지 않았습니다.`);
+  }
+
+  async function importProductPdf(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.pdf') || (file.type && file.type !== 'application/pdf')) { setErrors({ pdf: 'PDF 파일만 사용할 수 있습니다.' }); return; }
+    if (file.size > PDF_LIMIT) { setErrors({ pdf: 'PDF가 15MB를 초과했습니다.' }); return; }
+    try {
+      const facts = inferProductFacts(await extractPdfText(file));
+      if (!Object.keys(facts).length) throw new Error('제품 정보를 찾지 못했습니다.');
+      setCurrent((value) => ({ ...value, facts: { ...EMPTY_FACTS, ...value.facts, ...facts } }));
+      setErrors({});
+      setAnnouncement(`${file.name}에서 제품 정보를 자동 입력했습니다. 원본 파일은 서버로 전송하지 않았습니다.`);
+    } catch (error) {
+      setErrors({ pdf: `PDF 텍스트를 읽지 못했습니다. ${error.message}` });
+    }
   }
 
   function applyFinding(finding) {
@@ -154,8 +174,11 @@ export default function StudioWorkspace({ initialMode = 'write', lockedMode = fa
         <form className="studio-grid" onSubmit={submitGeneration} noValidate>
           <section className="input-panel">
             <div className="panel-title"><div><small>01 / PRODUCT FACTS</small><h3>제품 정보를 입력하세요</h3></div><div className="quality-score"><strong>{quality.score}</strong><span>/ 100<br />정보 품질</span></div></div>
+            <div className="pdf-import"><div><strong>PDF에서 제품 정보 자동 입력</strong><span>텍스트 선택이 가능한 PDF · 최대 15MB</span></div><label className="file-button" htmlFor="product-pdf">PDF 선택</label><input className="visually-hidden" id="product-pdf" type="file" accept="application/pdf,.pdf" onChange={importProductPdf} /></div>
+            {errors.pdf && <p className="field-error">{errors.pdf}</p>}
             <div className="form-grid">
-              {Object.keys(FIELD_LABELS).map((key) => <label className={['ingredients', 'benefits', 'evidence', 'directions', 'keywords'].includes(key) ? 'wide' : ''} key={key} htmlFor={`fact-${key}`}><span>{FIELD_LABELS[key]}{REQUIRED_FIELDS.includes(key) && <b>필수</b>}</span>{['ingredients', 'benefits', 'evidence', 'directions', 'keywords'].includes(key) ? <textarea id={`fact-${key}`} value={current.facts?.[key] || ''} rows={key === 'benefits' ? 3 : 2} aria-describedby={errors[key] ? `error-${key}` : undefined} onChange={(event) => setFact(key, event.target.value)} /> : <input id={`fact-${key}`} value={current.facts?.[key] || ''} aria-describedby={errors[key] ? `error-${key}` : undefined} onChange={(event) => setFact(key, event.target.value)} />}{errors[key] && <small className="field-error" id={`error-${key}`}>{errors[key]}</small>}</label>)}
+              {Object.keys(FIELD_LABELS).map((key) => <label className={TEXTAREA_FIELDS.has(key) ? 'wide' : ''} key={key} htmlFor={`fact-${key}`}><span>{FIELD_LABELS[key]}{REQUIRED_FIELDS.includes(key) && <b>필수</b>}</span>{TEXTAREA_FIELDS.has(key) ? <textarea id={`fact-${key}`} value={current.facts?.[key] || ''} rows={key === 'benefits' ? 3 : 2} aria-describedby={errors[key] ? `error-${key}` : undefined} onChange={(event) => setFact(key, event.target.value)} /> : <input id={`fact-${key}`} list={key === 'category' ? 'product-types' : undefined} value={current.facts?.[key] || ''} aria-describedby={errors[key] ? `error-${key}` : undefined} onChange={(event) => setFact(key, event.target.value)} />}{errors[key] && <small className="field-error" id={`error-${key}`}>{errors[key]}</small>}</label>)}
+              <datalist id="product-types">{PRODUCT_TYPES.map((type) => <option value={type} key={type} />)}</datalist>
             </div>
             {quality.missing.includes('evidence') && current.facts?.benefits && <p className="evidence-warning">효능 근거가 비어 있습니다. 근거 없는 효능·인증 표현은 생성 결과에서 제외됩니다.</p>}
             <button className="primary-action" type="submit">리스팅 초안 생성 <span>→</span></button>

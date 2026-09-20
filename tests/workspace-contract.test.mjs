@@ -31,3 +31,16 @@ test('renders writing and validation as separate same-window routes', async () =
   assert.match(app, /initialMode="validate"/);
   assert.doesNotMatch(app, /target="_blank"/);
 });
+
+test('supports the reference product intake and local PDF autofill', async () => {
+  const workspace = await readFile(new URL('../src/StudioWorkspace.jsx', import.meta.url), 'utf8');
+  assert.match(workspace, /application\/pdf,\.pdf/);
+  assert.match(workspace, /15MB/);
+  assert.match(workspace, /extractPdfText/);
+  assert.match(workspace, /제품 유형/);
+  assert.match(workspace, /용량/);
+  assert.match(workspace, /원산지/);
+  assert.match(workspace, /제형 및 사용감/);
+  assert.match(workspace, /주요 고객/);
+  assert.match(workspace, /브랜드 톤/);
+});

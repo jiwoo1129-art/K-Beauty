@@ -1,4 +1,4 @@
-export const REQUIRED_FIELDS = ['brand', 'productName', 'category', 'ingredients', 'benefits', 'directions'];
+export const REQUIRED_FIELDS = ['brand', 'productName', 'category', 'netContents', 'origin'];
 
 const unsupportedClaim = /FDA approved|clinically proven|cures?|treats?|heals?|prevents?\s+(?:acne|disease|eczema)/i;
 
@@ -21,10 +21,17 @@ export function generateListing(facts) {
     : ['Supports a refreshed-looking skincare routine.'];
 
   return {
-    title: `${facts.brand || ''} ${facts.productName || ''} ${facts.category || ''}`.replace(/\s+/g, ' ').trim(),
+    title: `${facts.brand || ''} ${facts.productName || ''} ${facts.category || ''} ${facts.netContents || ''}`.replace(/\s+/g, ' ').trim(),
     bullets,
-    description: `${facts.productName || 'This product'} features ${facts.ingredients || 'carefully selected ingredients'}. ${facts.directions || ''}`.replace(/\s+/g, ' ').trim(),
-    searchTerms: String(facts.keywords || '').trim(),
+    description: [
+      `${facts.productName || 'This product'} features ${facts.ingredients || 'carefully selected ingredients'}.`,
+      facts.texture && `Texture: ${facts.texture}.`,
+      facts.audience && `Designed for ${facts.audience}.`,
+      facts.origin && `Country of origin: ${facts.origin}.`,
+      facts.directions,
+      facts.warnings && `Caution: ${facts.warnings}`,
+    ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(),
+    searchTerms: `${facts.primaryKeyword || ''} ${facts.keywords || ''}`.replace(/\s+/g, ' ').trim(),
     warnings: rejectedCount ? [`근거가 없거나 규제 위험이 있는 효능 표현 ${rejectedCount}개를 제외했습니다.`] : [],
     qualityScore: quality.score,
   };
