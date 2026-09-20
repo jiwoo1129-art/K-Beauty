@@ -18,10 +18,11 @@ export default function App() {
   return (
     <div className="site-shell">
       <a className="skip-link" href={route === 'home' ? '#hero' : '#studio'}>{route === 'home' ? '소개로 바로가기' : '작업실로 바로가기'}</a>
-      <header className="topbar"><a className="brand" href="/" onClick={(event) => follow(event, '/')} aria-label="COMPLY.AI Beauty Listing Studio 홈"><span className="brand__mark"><i /></span><b>COMPLY<span>.</span>AI</b><small>BEAUTY LISTING STUDIO</small></a><nav aria-label="주요 메뉴"><a href="/" onClick={(event) => follow(event, '/')}>소개</a><a href="/write" onClick={(event) => follow(event, '/write')}>Listing 작성</a><a href="/validate" onClick={(event) => follow(event, '/validate')}>Listing 검증</a><ThemeToggle theme={theme} onChange={setTheme} /><button type="button" onClick={() => go('/validate')}>무료 검토 시작 ↗</button></nav></header>
+      <header className="topbar"><a className="brand" href="/" onClick={(event) => follow(event, '/')} aria-label="COMPLY.AI Beauty Listing Studio 홈"><span className="brand__mark"><i /></span><b>COMPLY<span>.</span>AI</b><small>BEAUTY LISTING STUDIO</small></a><nav className="solution-nav" aria-label="주요 메뉴"><a href="/" onClick={(event) => follow(event, '/')}>소개</a><a href="/write" onClick={(event) => follow(event, '/write')}>Listing 작성</a><a href="/validate" onClick={(event) => follow(event, '/validate')}>Listing 검증</a><ThemeToggle theme={theme} onChange={setTheme} /><button type="button" onClick={() => go('/validate')}>무료 검토 시작 ↗</button></nav></header>
+      {route !== 'home' && <nav className="route-switcher" aria-label="솔루션 메뉴"><a href="/write" aria-current={route === 'write' ? 'page' : undefined} onClick={(event) => follow(event, '/write')}>Listing 작성</a><a href="/validate" aria-current={route === 'validate' ? 'page' : undefined} onClick={(event) => follow(event, '/validate')}>Listing 검증</a></nav>}
       {route === 'home' && <Hero onSelect={(mode) => go(`/${mode}`)} />}
-      {route === 'write' && <StudioWorkspace initialMode="write" lockedMode onNavigate={go} />}
-      {route === 'validate' && <StudioWorkspace initialMode="validate" lockedMode onNavigate={go} />}
+      {route === 'write' && <main className="route-workspace"><StudioWorkspace initialMode="write" lockedMode onNavigate={go} /></main>}
+      {route === 'validate' && <main className="route-workspace"><StudioWorkspace initialMode="validate" lockedMode onNavigate={go} /></main>}
       <footer className="footer"><b>COMPLY.AI</b><span>Beauty listing decisions, with evidence.</span><small>자동 결과는 정책 준수를 보증하지 않습니다.</small></footer>
     </div>
   );
