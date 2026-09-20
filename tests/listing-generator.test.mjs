@@ -40,3 +40,8 @@ test('formats and parses a complete downloadable listing', () => {
 test('keeps unstructured validation copy as the description', () => {
   assert.deepEqual(parseListingText('A draft without headings'), { title: '', bullets: [], description: 'A draft without headings', searchTerms: '' });
 });
+
+test('parses headings after compliance capitalization fixes', () => {
+  const text = 'Title\nBarrier Serum\n\nBullet Points\n1. Hydrating\n\nDescription\nDaily serum.\n\nSearch Terms\nface serum';
+  assert.deepEqual(parseListingText(text), { title: 'Barrier Serum', bullets: ['Hydrating'], description: 'Daily serum.', searchTerms: 'face serum' });
+});

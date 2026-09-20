@@ -14,7 +14,11 @@ export function formatListingText(listing) {
 }
 
 export function parseListingText(text) {
-  const source = String(text || '').replace(/\r/g, '').trim();
+  const source = String(text || '').replace(/\r/g, '').trim()
+    .replace(/^title$/gim, 'TITLE')
+    .replace(/^bullet points$/gim, 'BULLET POINTS')
+    .replace(/^description$/gim, 'DESCRIPTION')
+    .replace(/^search terms$/gim, 'SEARCH TERMS');
   if (!source.startsWith('TITLE\n')) return { title: '', bullets: [], description: source, searchTerms: '' };
   const read = (start, end) => {
     const from = source.indexOf(`${start}\n`);
