@@ -25,15 +25,14 @@ test('supports an accessible persisted theme toggle', async () => {
 });
 
 test('styles route workspaces with the existing visual system', async () => {
-  const css = await readFile(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../src/solution.css', import.meta.url), 'utf8');
   const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
-  assert.match(css, /\.route-workspace/);
-  assert.match(css, /\.solution-nav/);
-  assert.match(css, /\.route-switcher/);
+  assert.match(css, /\.solution-sidebar/);
+  assert.match(css, /\.writer-desk/);
+  assert.match(css, /\.workspace-panel/);
+  assert.match(css, /var\(--orange\)/);
   assert.match(css, /\.listing-actions/);
   assert.match(css, /@media\s*\(max-width:/);
-  assert.match(css, /:focus-visible/);
   assert.match(app, /className="solution-nav"/);
-  assert.match(app, /className="route-switcher"/);
-  assert.match(app, /className="route-workspace"/);
+  assert.match(app, /<SolutionPage solution=\{route\}/);
 });
