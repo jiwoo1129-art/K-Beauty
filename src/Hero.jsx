@@ -8,7 +8,7 @@ function ScanCard() {
   return (
     <article className="scan-card" aria-label="문장별 정책 검토 예시">
       <header><span>AMAZON BEAUTY / LIVE REVIEW</span><i>SCANNING</i></header>
-      <div className="scan-card__product"><div className="scan-card__thumb" /><div><small>COMPLY LAB</small><strong>Evidence Barrier™<br />Hydrating Serum</strong><span>★★★★★ 4.8</span></div></div>
+      <div className="scan-card__product"><div className="scan-card__thumb"><MobileBloom compact /></div><div><small>COMPLY LAB</small><strong>Evidence Barrier™<br />Hydrating Serum</strong><span>★★★★★ 4.8</span></div></div>
       <div className="claim-scan" aria-hidden="true" />
       <div className="scan-card__claim scan-card__claim--risk"><b>HIGH</b><del>Clinically proven to heal acne</del></div>
       <div className="scan-card__claim scan-card__claim--safe"><b>SAFE</b><span>Helps improve the look of blemishes</span></div>
