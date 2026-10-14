@@ -3,6 +3,7 @@ import { createWriterHandoff, saveWriterHandoff } from './agentWorkflow.js';
 import AnnotatedValidationReport from './AnnotatedValidationReport.jsx';
 import WritingWorkspace from './WritingWorkspace.jsx';
 import { validateSegments } from './validationAgent.js';
+import { useLanguage } from '../LanguageContext.jsx';
 
 function extractDocument(raw, fileName) {
   let source = raw;
@@ -45,28 +46,36 @@ function extractDocument(raw, fileName) {
 }
 
 export default function AgentWorkspace({ solution }) {
+  const { language, t } = useLanguage();
   const [file, setFile] = useState(null);
   const [validation, setValidation] = useState(null);
+  const [validationInput, setValidationInput] = useState(null);
   const [sourceText, setSourceText] = useState('');
   const [handoff, setHandoff] = useState(null);
   const [state, setState] = useState('IDLE');
   const [error, setError] = useState('');
 
-  const revisionCount = useMemo(() => validation?.segment_results?.filter((segment) => ['NEEDS_EVIDENCE', 'VIOLATION'].includes(segment.status)).length || 0, [validation]);
+  const displayedValidation = useMemo(
+    () => validationInput ? { ...validateSegments(validationInput.segments, validationInput.productFacts, language), trace_id: validation?.trace_id } : validation,
+    [language, validation, validationInput],
+  );
+  const revisionCount = useMemo(() => displayedValidation?.segment_results?.filter((segment) => ['NEEDS_EVIDENCE', 'VIOLATION'].includes(segment.status)).length || 0, [displayedValidation]);
 
   async function runValidation() {
     if (!file) {
-      setError('검증할 TXT 또는 HTML 파일을 선택해 주세요.');
+      setError(t('agent.fileError'));
       return;
     }
     setError('');
     setState('VALIDATING');
     setValidation(null);
+    setValidationInput(null);
     setHandoff(null);
     try {
       const extracted = extractDocument(await file.text(), file.name);
       setSourceText(extracted.raw_source);
-      const data = validateSegments(extracted.document_segments, extracted.product_facts);
+      const data = validateSegments(extracted.document_segments, extracted.product_facts, language);
+      setValidationInput({ segments: extracted.document_segments, productFacts: extracted.product_facts });
       setValidation(data);
       setState(data.verdict);
     } catch (caught) {
@@ -76,7 +85,7 @@ export default function AgentWorkspace({ solution }) {
   }
 
   function queueWriterHandoff() {
-    const payload = createWriterHandoff(validation, sourceText);
+    const payload = createWriterHandoff(displayedValidation, sourceText);
     saveWriterHandoff(payload);
     setHandoff(payload);
     setState('WRITER_PENDING');
@@ -91,21 +100,21 @@ export default function AgentWorkspace({ solution }) {
 
       {solution === 'validate' && (
         <div className="workspace-panel">
-          <div className="workspace-header"><div><p className="workspace-kicker">VALIDATION AGENT</p><h3>상세페이지 초안 검증</h3></div><span className={`run-state run-state--${state.toLowerCase()}`}>{state}</span></div>
-          <label className="file-drop" htmlFor="homepage-listing-file"><span>TXT 또는 HTML 상세페이지를 선택하세요</span><small>{file ? file.name : 'Title · Bullet · Description · Claim 자동 분류'}</small></label>
+          <div className="workspace-header"><div><p className="workspace-kicker">{t('agent.validationKicker')}</p><h3>{t('agent.title')}</h3></div><span className={`run-state run-state--${state.toLowerCase()}`}>{t(`agent.state.${state}`)}</span></div>
+          <label className="file-drop" htmlFor="homepage-listing-file"><span>{t('agent.filePrompt')}</span><small>{file ? file.name : t('agent.fileHint')}</small></label>
           <input id="homepage-listing-file" className="visually-hidden" type="file" accept=".txt,.html,.htm,text/plain,text/html" onChange={(event) => setFile(event.target.files?.[0] || null)} />
-          <button className="button button--primary workspace-run" type="button" onClick={runValidation} disabled={state === 'VALIDATING'}>단락별 정책 검증<span aria-hidden="true">→</span></button>
+          <button className="button button--primary workspace-run" type="button" onClick={runValidation} disabled={state === 'VALIDATING'}>{t('agent.run')}<span aria-hidden="true">→</span></button>
           {error && <p className="workspace-error">{error}</p>}
 
-          {validation && (
+          {displayedValidation && (
             <div className="validation-report">
-              <div className="validation-summary"><div><span>FINAL VERDICT</span><strong>{validation.verdict}</strong></div><div><span>REVISION TASKS</span><strong>{revisionCount}</strong></div><small>Trace {validation.trace_id}</small></div>
-              {validation.verdict === 'BLOCKED' && validation.blocking_summary && (
-                <p className="blocking-summary">{validation.blocking_summary}</p>
+              <div className="validation-summary"><div><span>{t('agent.finalVerdict')}</span><strong>{t(`verdict.${displayedValidation.verdict}`)}</strong></div><div><span>{t('agent.revisionTasks')}</span><strong>{revisionCount}</strong></div><small>{t('agent.trace')} {displayedValidation.trace_id}</small></div>
+              {displayedValidation.verdict === 'BLOCKED' && displayedValidation.blocking_summary && (
+                <p className="blocking-summary">{displayedValidation.blocking_summary}</p>
               )}
-              <AnnotatedValidationReport rawSource={sourceText} segments={validation.segment_results} />
-              {revisionCount > 0 && <button className="button button--primary writer-handoff" type="button" onClick={queueWriterHandoff}>글쓰기 에이전트로 넘기기<span>{revisionCount}</span></button>}
-              {handoff && <div className="handoff-receipt"><strong>WRITER_PENDING</strong><span>{handoff.revision_tasks.length}개 수정 작업이 인계 큐에 저장되었습니다.</span><details><summary>인계 payload 보기</summary><pre>{JSON.stringify(handoff, null, 2)}</pre></details></div>}
+              <AnnotatedValidationReport rawSource={sourceText} segments={displayedValidation.segment_results} />
+              {revisionCount > 0 && <button className="button button--primary writer-handoff" type="button" onClick={queueWriterHandoff}>{t('agent.writerHandoff')}<span>{revisionCount}</span></button>}
+              {handoff && <div className="handoff-receipt"><strong>{t('agent.state.WRITER_PENDING')}</strong><span>{t('agent.handoffSaved', { count: handoff.revision_tasks.length })}</span><details><summary>{t('agent.handoffDetails')}</summary><pre>{JSON.stringify(handoff, null, 2)}</pre></details></div>}
             </div>
           )}
         </div>

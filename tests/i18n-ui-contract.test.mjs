@@ -34,3 +34,9 @@ test('write workflow resolves controls and statuses from the dictionary', () => 
     assert.doesNotMatch(contents, /제품을 알려주세요|선택하세요|입력 대기|검증 통과|TXT 다운로드/, file);
   }
 });
+
+test('validation workflow and annotated report resolve interface copy through locale context', () => {
+  for (const file of ['AgentWorkspace.jsx', 'AnnotatedValidationReport.jsx']) {
+    assert.match(source(`src/writer/${file}`), /useLanguage\(\)/, file);
+  }
+});

@@ -36,7 +36,7 @@ const choiceConfig = {
 };
 
 export default function WritingWorkspace() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [form, setForm] = useState(EMPTY_FORM);
   const [draft, setDraft] = useState(null);
   const [validation, setValidation] = useState(null);
@@ -88,7 +88,7 @@ export default function WritingWorkspace() {
   }
 
   async function validateDraft(nextDraft) {
-    setValidation(validateSegments(toValidationSegments(nextDraft)));
+    setValidation(validateSegments(toValidationSegments(nextDraft), {}, language));
   }
 
   async function generateListing(event) {
