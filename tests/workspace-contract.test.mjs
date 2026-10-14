@@ -45,6 +45,6 @@ test('supports whole-listing copy download and two-way route transfer', async ()
   assert.match(result, /common\.downloadTxt/);
   assert.match(result, /URL\.createObjectURL/);
   assert.match(validate, /saveWriterHandoff/);
-  assert.match(validate, /window\.location\.assign\('\/write'\)/);
+  assert.match(validate, /window\.location\.assign\(routeHref\('\/write'\)\)/);
   assert.match(write, /comply\.writerHandoff/);
 });

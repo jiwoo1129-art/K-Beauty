@@ -4,6 +4,7 @@ import AnnotatedValidationReport from './AnnotatedValidationReport.jsx';
 import WritingWorkspace from './WritingWorkspace.jsx';
 import { validateSegments } from './validationAgent.js';
 import { useLanguage } from '../LanguageContext.jsx';
+import { routeHref } from '../routeState.js';
 
 function extractDocument(raw, fileName) {
   let source = raw;
@@ -89,7 +90,7 @@ export default function AgentWorkspace({ solution }) {
     saveWriterHandoff(payload);
     setHandoff(payload);
     setState('WRITER_PENDING');
-    window.location.assign('/write');
+    window.location.assign(routeHref('/write'));
   }
 
   return (

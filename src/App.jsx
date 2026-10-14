@@ -4,7 +4,7 @@ import LanguageToggle from './LanguageToggle.jsx';
 import SolutionPage from './SolutionPage.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 import { useLanguage } from './LanguageContext.jsx';
-import { navigateTo, normalizeRoute } from './routeState.js';
+import { navigateTo, normalizeRoute, routeHref } from './routeState.js';
 
 export default function App() {
   const { t } = useLanguage();
@@ -21,7 +21,7 @@ export default function App() {
   return (
     <div className="site-shell">
       <a className="skip-link" href={route === 'home' ? '#hero' : '#studio'}>{t(route === 'home' ? 'app.skipHome' : 'app.skipStudio')}</a>
-      {route === 'home' && <header className="topbar"><a className="brand" href="/" onClick={(event) => follow(event, '/')} aria-label={t('app.homeLabel')}><span className="brand__mark"><i /></span><b>COMPLY<span>.</span>AI</b><small>BEAUTY LISTING STUDIO</small></a><nav className="solution-nav" aria-label={t('app.mainMenu')}><a href="/" onClick={(event) => follow(event, '/')}>{t('nav.about')}</a><a href="/write" onClick={(event) => follow(event, '/write')}>{t('nav.write')}</a><a href="/validate" onClick={(event) => follow(event, '/validate')}>{t('nav.validate')}</a><LanguageToggle /><ThemeToggle theme={theme} onChange={setTheme} /><button type="button" onClick={() => go('/validate')}>{t('nav.freeReview')}</button></nav></header>}
+      {route === 'home' && <header className="topbar"><a className="brand" href={routeHref('/')} onClick={(event) => follow(event, '/')} aria-label={t('app.homeLabel')}><span className="brand__mark"><i /></span><b>COMPLY<span>.</span>AI</b><small>BEAUTY LISTING STUDIO</small></a><nav className="solution-nav" aria-label={t('app.mainMenu')}><a href={routeHref('/')} onClick={(event) => follow(event, '/')}>{t('nav.about')}</a><a href={routeHref('/write')} onClick={(event) => follow(event, '/write')}>{t('nav.write')}</a><a href={routeHref('/validate')} onClick={(event) => follow(event, '/validate')}>{t('nav.validate')}</a><LanguageToggle /><ThemeToggle theme={theme} onChange={setTheme} /><button type="button" onClick={() => go('/validate')}>{t('nav.freeReview')}</button></nav></header>}
       {route === 'home' && <Hero onSelect={(mode) => go(`/${mode}`)} />}
       {route !== 'home' && <SolutionPage solution={route} theme={theme} onThemeChange={setTheme} onNavigate={go} />}
       {route === 'home' && <footer className="footer"><b>COMPLY.AI</b><span>{t('footer.tagline')}</span><small>{t('footer.disclaimer')}</small></footer>}
