@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildListingFilename, buildListingText, buildRevisedListingText, revealTextParts } from './listingText.js';
 import { FileText, ArrowDown, ShieldCheck } from './studioIcons.jsx';
+import { useLanguage } from '../LanguageContext.jsx';
 
 const TYPE_INTERVAL_MS = 6;
 
-function CopyButton({ text, label = '복사', disabled = false }) {
-  return <button className="copy-action" type="button" disabled={disabled} onClick={() => navigator.clipboard?.writeText(text)}>{label}</button>;
+function CopyButton({ text, label, disabled = false }) {
+  const { t } = useLanguage();
+  return <button className="copy-action" type="button" disabled={disabled} onClick={() => navigator.clipboard?.writeText(text)}>{label || t('common.copy')}</button>;
 }
 
 function downloadText(text, filename) {
@@ -21,6 +23,7 @@ function downloadText(text, filename) {
 }
 
 export default function ListingDraft({ draft, validation, revisedItems = [], originalListing = '' }) {
+  const { t } = useLanguage();
   const readyDraft = draft?.status === 'READY' ? draft : null;
   const textParts = useMemo(() => readyDraft ? [
     readyDraft.title.text,
@@ -47,10 +50,10 @@ export default function ListingDraft({ draft, validation, revisedItems = [], ori
 
   if (revisedItems.length) {
     return (
-      <section className="listing-paper" aria-label="수정된 Listing 문구">
+      <section className="listing-paper" aria-label={t('draft.revisedAria')}>
         <div className="listing-paper__top">
-          <div><span className="paper-kicker">TARGETED REVISION</span><h3>Flagged text revised</h3></div>
-          <span className="policy-stamp policy-stamp--pass">RECHECK READY</span>
+          <div><span className="paper-kicker">{t('draft.targetedRevision')}</span><h3>{t('draft.flaggedRevised')}</h3></div>
+          <span className="policy-stamp policy-stamp--pass">{t('draft.recheckReady')}</span>
         </div>
         {revisedItems.map((item) => (
           <article className="revision-card" key={item.sentence_id}>
@@ -61,7 +64,7 @@ export default function ListingDraft({ draft, validation, revisedItems = [], ori
           </article>
         ))}
         <div className="listing-actions">
-          <button className="download-action" type="button" onClick={() => downloadText(buildRevisedListingText(originalListing, revisedItems), 'amazon-listing-revised.txt')}>수정 반영본 TXT 다운로드</button>
+          <button className="download-action" type="button" onClick={() => downloadText(buildRevisedListingText(originalListing, revisedItems), 'amazon-listing-revised.txt')}>{t('draft.revisedDownload')}</button>
         </div>
       </section>
     );
@@ -70,16 +73,16 @@ export default function ListingDraft({ draft, validation, revisedItems = [], ori
   if (!draft || draft.status !== 'READY') {
     return (
       <section className="listing-paper listing-paper--empty">
-        <div className="listing-paper__top"><div><span className="paper-kicker">02 / 작성 결과</span><h3>Listing 미리보기</h3></div><span className="studio-waiting">입력 대기</span></div>
-        <div className="studio-empty-intro"><div className="studio-document-icon"><FileText size={27} strokeWidth={1.6} /></div><h3>제품 정보가<br />상세페이지의 시작입니다.</h3><p>왼쪽에 필수 정보 5개를 입력하면<br />상품 소개와 검색어를 작성할 수 있습니다.</p></div>
-        <div className="studio-output-outline" aria-label="생성되는 항목">
-          <div><span>상품 제목</span><small>Product Title</small></div>
-          <div><span>핵심 특징 5개</span><small>Bullet Points</small></div>
-          <div><span>상세 설명 · 사용법 · 주의 사항</span><small>Product Description</small></div>
-          <div><span>검색 키워드</span><small>Backend Search Terms</small></div>
+        <div className="listing-paper__top"><div><span className="paper-kicker">{t('draft.step')}</span><h3>{t('draft.preview')}</h3></div><span className="studio-waiting">{t('draft.waiting')}</span></div>
+        <div className="studio-empty-intro"><div className="studio-document-icon"><FileText size={27} strokeWidth={1.6} /></div><h3>{t('draft.emptyTitle1')}<br />{t('draft.emptyTitle2')}</h3><p>{t('draft.emptyBody1')}<br />{t('draft.emptyBody2')}</p></div>
+        <div className="studio-output-outline" aria-label={t('draft.outlineAria')}>
+          <div><span>{t('draft.productTitle')}</span><small>Product Title</small></div>
+          <div><span>{t('draft.bullets')}</span><small>Bullet Points</small></div>
+          <div><span>{t('draft.description')}</span><small>Product Description</small></div>
+          <div><span>{t('draft.searchTerms')}</span><small>Backend Search Terms</small></div>
         </div>
-        <div className="studio-output-foot"><ArrowDown size={15} /><span>작성 후 전체 복사 또는 TXT 다운로드</span></div>
-        <div className="studio-policy-note"><ShieldCheck size={17} /><p>초안 생성 후 정책 검증 결과가 표시됩니다.</p></div>
+        <div className="studio-output-foot"><ArrowDown size={15} /><span>{t('draft.afterAction')}</span></div>
+        <div className="studio-policy-note"><ShieldCheck size={17} /><p>{t('draft.afterPolicy')}</p></div>
       </section>
     );
   }
@@ -96,39 +99,39 @@ export default function ListingDraft({ draft, validation, revisedItems = [], ori
   const verdict = isTyping ? 'CHECKING' : validation?.verdict || 'CHECKING';
   const typingClass = (index, base = '') => `${base} ${activePart === index ? 'listing-typing' : ''}`.trim();
   return (
-    <section className="listing-paper" aria-label="생성된 Amazon Listing">
+    <section className="listing-paper" aria-label={t('draft.generatedAria')}>
       <div className="listing-paper__top">
-        <div><span className="paper-kicker">02 / 작성 결과</span><h3>Listing 초안</h3></div>
-        <span className={`policy-stamp policy-stamp--${verdict.toLowerCase()}`}>{isTyping ? '작성 중' : ({ PASS: '검증 통과', BLOCKED: '수정 필요', CHECKING: '검증 중', ERROR: '검증 실패', NEEDS_EVIDENCE: '근거 확인 필요' })[verdict] || verdict}</span>
+        <div><span className="paper-kicker">{t('draft.step')}</span><h3>{t('draft.title')}</h3></div>
+        <span className={`policy-stamp policy-stamp--${verdict.toLowerCase()}`}>{isTyping ? t('draft.writing') : ({ PASS: t('draft.pass'), BLOCKED: t('draft.blocked'), CHECKING: t('draft.checking'), ERROR: t('draft.error'), NEEDS_EVIDENCE: t('draft.needsEvidence') })[verdict] || verdict}</span>
       </div>
       <div className="listing-section">
-        <div className="listing-label"><span>Product Title</span><small>{draft.title.text.length} / 200</small></div>
+        <div className="listing-label"><span>{t('draft.productTitleLabel')}</span><small>{draft.title.text.length} / 200</small></div>
         <p className={typingClass(0, 'listing-title')}>{visibleParts[0]}</p>
       </div>
       <div className="listing-section">
-        <div className="listing-label"><span>Bullet Points</span><small>5 items</small></div>
+        <div className="listing-label"><span>{t('draft.bulletLabel')}</span><small>{t('draft.itemCount')}</small></div>
         <ul>{draft.bullets.map((item, index) => <li className={typingClass(bulletStart + index)} key={item.sentence_id}><b>{item.sentence_id}</b>{visibleParts[bulletStart + index]}</li>)}</ul>
       </div>
       <div className="listing-section">
-        <div className="listing-label"><span>Product Description</span><small>D01</small></div>
+        <div className="listing-label"><span>{t('draft.descriptionLabel')}</span><small>D01</small></div>
         <div className="listing-paragraphs">{draft.description.paragraphs.map((paragraph, index) => <p className={typingClass(descriptionStart + index)} key={index}>{visibleParts[descriptionStart + index]}</p>)}</div>
       </div>
       <div className="listing-section">
-        <div className="listing-label"><span>How to Use</span></div>
+        <div className="listing-label"><span>{t('draft.howToUseLabel')}</span></div>
         <p className={typingClass(howToUseIndex)}>{visibleParts[howToUseIndex]}</p>
       </div>
       <div className="listing-section">
-        <div className="listing-label"><span>Caution</span></div>
+        <div className="listing-label"><span>{t('draft.cautionLabel')}</span></div>
         <p className={typingClass(cautionIndex)}>{visibleParts[cautionIndex]}</p>
       </div>
       <div className="listing-section listing-section--search">
-        <div className="listing-label"><span>Backend Search Terms</span></div>
+        <div className="listing-label"><span>{t('draft.searchLabel')}</span></div>
         <code className={typingClass(searchIndex)}>{visibleParts[searchIndex]}</code>
       </div>
-      {!isTyping && draft.claimNotice && <p className="claim-notice">{draft.claimNotice}</p>}
+      {!isTyping && draft.claimNotice && <p className="claim-notice">{t('draft.claimNotice')}</p>}
       <div className="listing-actions">
-        <CopyButton text={fullText} label="전체 Listing 복사" disabled={isTyping} />
-        <button className="download-action" type="button" disabled={isTyping} onClick={() => downloadText(fullText, buildListingFilename(draft))}>TXT 다운로드</button>
+        <CopyButton text={fullText} label={t('draft.copyAll')} disabled={isTyping} />
+        <button className="download-action" type="button" disabled={isTyping} onClick={() => downloadText(fullText, buildListingFilename(draft))}>{t('common.downloadTxt')}</button>
       </div>
     </section>
   );

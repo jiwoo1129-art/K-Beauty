@@ -20,3 +20,17 @@ test('landing and solution components resolve interface copy through the locale 
     assert.match(source(file), /useLanguage\(\)/, file);
   }
 });
+
+test('write workflow reads locale without keying or remounting its root', () => {
+  const writing = source('src/writer/WritingWorkspace.jsx');
+  assert.match(writing, /useLanguage\(\)/);
+  assert.doesNotMatch(writing, /key=\{language\}/);
+});
+
+test('write workflow resolves controls and statuses from the dictionary', () => {
+  for (const file of ['WritingWorkspace.jsx', 'ProductChoiceField.jsx', 'ListingDraft.jsx']) {
+    const contents = source(`src/writer/${file}`);
+    assert.match(contents, /useLanguage\(\)/, file);
+    assert.doesNotMatch(contents, /제품을 알려주세요|선택하세요|입력 대기|검증 통과|TXT 다운로드/, file);
+  }
+});
